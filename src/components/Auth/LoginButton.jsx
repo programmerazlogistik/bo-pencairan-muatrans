@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { ChevronDown } from "@muatmuat/icons";
+import { ChevronDown, Profile } from "@muatmuat/icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ const LoginButton = () => {
 
   return (
     <div
-      className="flex w-fit cursor-pointer items-center space-x-1 rounded-md bg-white p-2 text-white transition-all duration-200"
+      className="flex w-fit cursor-pointer items-center space-x-1 rounded-md p-2 text-white transition-all duration-200"
       onClick={() => {
         const route =
           process.env.NODE_ENV === "development"
@@ -39,21 +39,19 @@ const LoginButton = () => {
       }}
     >
       {isLoginButton ? (
-        <div className="flex items-center gap-2 text-primary-700">
+        <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{name}</span>
         </div>
       ) : (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center gap-2 text-primary-700">
-              <span className="text-sm font-medium">{`Hi, ${name}`}</span>
+            <div className="flex items-center gap-2">
+              <Profile className="h-5 w-5 text-white" />
+              <span className="text-sm font-medium">{`${name}`}</span>
               <ChevronDown className="h-4 stroke-primary-700 stroke-1" />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => router.push("/change-password")}>
-              Ubah Password
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-error-500">
               Logout
             </DropdownMenuItem>

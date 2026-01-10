@@ -34,7 +34,7 @@ export default function NotFound() {
           <Button
             variant="muatparts-primary"
             iconLeft={<Home size={16} />}
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/pencairan")}
             className="min-w-[140px]"
           >
             <span className="pt-0.5">Beranda</span>

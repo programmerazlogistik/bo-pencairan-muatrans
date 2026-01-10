@@ -4,36 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { cn } from "@muatmuat/lib/utils";
 import { IconComponent } from "@muatmuat/ui/IconComponent";
 
-import { useCheckMenuPermissions } from "@/hooks/useCheckMenuPermissions";
-
-const Sidebar = () => {
+const Sidebar = ({ sidebarOpen = true }) => {
   const pathname = usePathname();
-  const { permissions } = useCheckMenuPermissions();
 
   const allMenuItems = [
     {
-      name: "Setting Approval",
+      name: "Pencairan Muatrans",
       icon: "/icons/nav/kontrak.svg",
-      href: "/setting-approval",
+      href: "/pencairan",
       expandable: false,
-      permissionKey: null, // Always visible
-    },
-    {
-      name: "Master User",
-      icon: "/icons/nav/user.svg",
-      href: "/master-user",
-      expandable: false,
-      permissionKey: "masterUser",
-    },
-    {
-      name: "Master Hak Akses",
-      icon: "/icons/nav/user.svg",
-      href: "/master-hak-akses",
-      expandable: false,
-      permissionKey: "masterHakAkses",
+      permissionKey: null,
     },
   ];
 
@@ -41,9 +23,9 @@ const Sidebar = () => {
   const menuItems = useMemo(() => {
     return allMenuItems.filter((item) => {
       if (!item.permissionKey) return true;
-      return permissions[item.permissionKey];
+      return true;
     });
-  }, [permissions]);
+  }, []);
 
   // initialize expanded parents that are active
   const [expanded, setExpanded] = useState(() =>
@@ -58,15 +40,24 @@ const Sidebar = () => {
   );
 
   return (
-    <div className="flex h-full flex-col bg-[#002064] shadow-[2px_0px_16px_0px_#00000026]">
-      <div className="flex flex-grow flex-col overflow-y-auto py-2">
+    <div className="flex h-full flex-col bg-white shadow-[2px_0px_16px_0px_#00000026]">
+      <div
+        className={`flex flex-grow flex-col gap-[5px] overflow-y-auto py-2 ${sidebarOpen ? "px-[13px]" : "px-2"}`}
+      >
         {menuItems.map((item, index) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const hasChildren =
+            item.expandable &&
+            Array.isArray(item.children) &&
+            item.children.length > 0;
           const isExpanded = expanded.includes(item.href);
+          // when parent has children and is expanded, don't apply active style to parent
+          const parentActive = hasChildren ? !isExpanded && isActive : isActive;
+
           return (
             <div key={index}>
-              {item.expandable ? (
+              {hasChildren ? (
                 <button
                   type="button"
                   onClick={() =>
@@ -77,82 +68,95 @@ const Sidebar = () => {
                     )
                   }
                   aria-expanded={isExpanded}
-                  className={`flex w-full items-center justify-between px-5 py-6 text-left transition-colors duration-200`}
+                  className={`flex w-full items-center rounded-lg py-2 transition-colors duration-200 ${
+                    sidebarOpen
+                      ? "justify-between px-[10px]"
+                      : "justify-center px-0"
+                  } ${
+                    parentActive ? "bg-white text-black" : "hover:bg-gray-100"
+                  }`}
                 >
-                  <div className="flex items-center">
-                    <div className="mr-3">
+                  <div
+                    className={`flex items-center ${!sidebarOpen && "justify-center"}`}
+                  >
+                    <div className={sidebarOpen ? "mr-3" : ""}>
                       <IconComponent
                         src={item.icon}
                         alt={item.name}
                         width={24}
                         height={24}
-                        color={"white"}
+                        color="black"
                       />
                     </div>
-                    <span className="text-sm font-semibold text-white">
-                      {item.name}
-                    </span>
+                    {sidebarOpen && (
+                      <span className="text-sm font-semibold">{item.name}</span>
+                    )}
                   </div>
-                  <IconComponent
-                    src="/icons/chevron-down-bo.svg"
-                    alt="Chevron Down"
-                    width={12}
-                    height={12}
-                    className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                  />
+                  {sidebarOpen && (
+                    <IconComponent
+                      src="/icons/chevron-right.svg"
+                      alt="Chevron Right"
+                      width={20}
+                      height={20}
+                      color="black"
+                      className={`transform transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                    />
+                  )}
                 </button>
               ) : (
-                <Link
-                  href={item.href}
-                  className={`flex items-center justify-between px-5 py-6 transition-colors duration-200 ${
-                    isActive ? "bg-[#007BFF]/40" : ""
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <div className="mr-3">
-                      <IconComponent
-                        src={item.icon}
-                        alt={item.name}
-                        width={24}
-                        height={24}
-                        color={"white"}
-                      />
+                sidebarOpen && (
+                  <Link
+                    href={item.href}
+                    className={`flex items-center justify-between rounded-lg px-[10px] py-2 transition-colors duration-200 ${
+                      parentActive ? "bg-white text-black" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className="mr-3">
+                        <IconComponent
+                          src={item.icon}
+                          alt={item.name}
+                          width={24}
+                          height={24}
+                          color="black"
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-black">
+                        {item.name}
+                      </span>
                     </div>
-                    <span className="text-sm font-semibold text-white">
-                      {item.name}
-                    </span>
-                  </div>
-                </Link>
+                  </Link>
+                )
               )}
-              {item.expandable && item.children && (
+              {hasChildren && sidebarOpen && (
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded
-                      ? "max-h-[500px] opacity-100"
-                      : "max-h-0 opacity-0"
+                  className={`flex flex-col space-y-[5px] overflow-hidden transition-all duration-300 ease-in-out ${
+                    isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
-                  {item.children.map((child, childIndex) => {
-                    const isChildActive =
+                  {item.children.map((child, ci) => {
+                    const childActive =
                       pathname === child.href ||
                       pathname.startsWith(`${child.href}/`);
                     return (
                       <Link
-                        key={childIndex}
+                        key={ci}
                         href={child.href}
-                        className={`flex items-center py-5 pl-12 pr-5 transition-colors duration-200 ${
-                          isChildActive ? "bg-[#007BFF]" : ""
+                        className={`flex w-full items-center justify-between rounded-lg p-[10px] pl-10 text-sm transition-colors duration-200 ${
+                          childActive
+                            ? "bg-white text-black"
+                            : "text-gray-900 hover:bg-gray-100"
                         }`}
                       >
-                        <span className="flex items-center gap-2 text-sm font-semibold text-white">
-                          <div
-                            className={cn(
-                              "size-2.5 rounded-full border-2 border-white",
-                              isChildActive && "bg-white"
-                            )}
+                        <div className="flex items-center">
+                          <span
+                            className={`mr-1.5 inline-block size-1.5 rounded-full bg-black`}
                           />
-                          {child.name}
-                        </span>
+                          <span className="truncate text-sm font-semibold">
+                            {child.name}
+                          </span>
+                        </div>
+                        <div />
                       </Link>
                     );
                   })}

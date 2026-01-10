@@ -65,15 +65,15 @@ const DesktopLayout = ({ children }) => {
 
   return (
     <div className="grid min-h-screen grid-rows-[58px_1fr] overflow-hidden">
-      <Navbar toggleSidebar={toggleSidebar} />
+      <Navbar toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
       <div className="flex min-w-0 overflow-hidden">
         {isMobile || (
           <div
             className={`z-20 min-h-[calc(100dvh_-_58px)] bg-white shadow-md transition-all duration-300 ${
-              sidebarOpen ? "w-64" : "w-0"
+              sidebarOpen ? "w-[258px]" : "w-0"
             }`}
           >
-            <Sidebar />
+            <Sidebar sidebarOpen={sidebarOpen} />
           </div>
         )}
 

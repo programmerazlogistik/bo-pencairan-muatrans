@@ -2,7 +2,7 @@ import useSWRMutation from "swr/mutation";
 import xior from 'xior';
 import type { DeepPartial } from "@/lib/typescript-utils";
 
-const USE_MOCK = false;
+const USE_MOCK = true;
 
 // Define types based on the API contract
 export interface LoginRequest {
