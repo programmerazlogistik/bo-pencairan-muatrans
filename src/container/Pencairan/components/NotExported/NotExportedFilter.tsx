@@ -1,11 +1,11 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 import { cn } from "@muatmuat/lib/utils";
 import { Button } from "@muatmuat/ui/Button";
 import { DatePickerWeb } from "@muatmuat/ui/Calendar";
-import { Input } from "@muatmuat/ui/Form";
+import { Input, NumberInput } from "@muatmuat/ui/Form";
 
-interface PencairanFilterProps {
+interface NotExportedFilterProps {
   showFilter: boolean;
   setShowFilter: Dispatch<SetStateAction<boolean>>;
   showExport: boolean;
@@ -25,14 +25,38 @@ const STATUS_FILTERS = [
   { label: "Retransfer", value: "retransfer", count: 3 },
 ];
 
-const PencairanFilter = ({
+const NotExportedFilter = ({
   showFilter,
   setShowFilter,
   showExport,
   setShowExport,
-}: PencairanFilterProps) => {
+}: NotExportedFilterProps) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
+  const [nominalMin, setNominalMin] = useState<number | undefined>(undefined);
+  const [nominalMax, setNominalMax] = useState<number | undefined>(undefined);
+
+  const nominalMaxError =
+    nominalMin !== undefined &&
+    nominalMax !== undefined &&
+    nominalMax < nominalMin
+      ? "Harus lebih besar dari nominal awal"
+      : undefined;
+
+  const [debouncedError, setDebouncedError] = useState<string | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    if (nominalMaxError) {
+      const timer = setTimeout(() => {
+        setDebouncedError(nominalMaxError);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setDebouncedError(undefined);
+    }
+  }, [nominalMaxError]);
 
   const handleStatusClick = (value: string) => {
     setSelectedStatus(value);
@@ -106,7 +130,7 @@ const PencairanFilter = ({
       {/* Advanced Filter Section */}
       <div
         className={cn(
-          "grid transition-all duration-300 ease-in-out",
+          "grid w-full transition-all duration-300 ease-in-out",
           showFilter
             ? "grid-rows-[1fr] opacity-100"
             : "grid-rows-[0fr] opacity-0"
@@ -119,7 +143,7 @@ const PencairanFilter = ({
               {/* Left Column */}
               <div className="flex flex-1 flex-col gap-5">
                 <div className="flex flex-row items-center gap-3">
-                  <span className="w-[120px] min-w-[120px] text-xs font-normal text-[#1B1B1B]">
+                  <span className="w-[100px] min-w-[100px] text-xs font-normal text-[#1B1B1B]">
                     No. Invoice
                   </span>
                   <Input
@@ -131,7 +155,7 @@ const PencairanFilter = ({
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
-                  <span className="w-[120px] min-w-[120px] text-xs font-normal text-[#1B1B1B]">
+                  <span className="w-[100px] min-w-[100px] text-xs font-normal text-[#1B1B1B]">
                     Rekening Tujuan
                   </span>
                   <Input
@@ -143,7 +167,7 @@ const PencairanFilter = ({
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
-                  <span className="w-[120px] min-w-[120px] text-xs font-normal text-[#1B1B1B]">
+                  <span className="w-[100px] min-w-[100px] text-xs font-normal text-[#1B1B1B]">
                     Nama Rekening
                   </span>
                   <Input
@@ -155,24 +179,29 @@ const PencairanFilter = ({
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
-                  <span className="w-[120px] min-w-[120px] text-xs font-normal text-[#1B1B1B]">
+                  <span className="w-[100px] min-w-[100px] self-start text-xs font-normal text-[#1B1B1B]">
                     Nominal Pencairan
                   </span>
-                  <div className="flex flex-1 flex-row items-center gap-3">
-                    <Input
+                  <div className="flex flex-1 flex-row items-start gap-3">
+                    <NumberInput
                       placeholder="Minimal"
                       className="flex-1"
-                      appearance={{
-                        containerClassName: "h-[32px] rounded-[6px]",
-                      }}
+                      hideStepper
+                      text={{ left: "Rp" }}
+                      defaultValue={null}
+                      value={nominalMin ?? null}
+                      onValueChange={setNominalMin}
                     />
-                    <span className="text-xs text-[#1B1B1B]">s/d</span>
-                    <Input
+                    <span className="pt-2 text-xs text-[#1B1B1B]">s/d</span>
+                    <NumberInput
                       placeholder="Maksimal"
                       className="flex-1"
-                      appearance={{
-                        containerClassName: "h-[32px] rounded-[6px]",
-                      }}
+                      hideStepper
+                      text={{ left: "Rp" }}
+                      defaultValue={null}
+                      value={nominalMax ?? null}
+                      onValueChange={setNominalMax}
+                      errorMessage={debouncedError}
                     />
                   </div>
                 </div>
@@ -215,4 +244,4 @@ const PencairanFilter = ({
   );
 };
 
-export default PencairanFilter;
+export default NotExportedFilter;

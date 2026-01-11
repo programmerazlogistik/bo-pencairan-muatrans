@@ -3,8 +3,8 @@
 import PropTypes from "prop-types";
 
 const Toggle = ({
-  textActive,
-  textInactive,
+  textActive = "",
+  textInactive = "",
   onClick,
   type = "primary",
   value = false,
@@ -23,7 +23,7 @@ const Toggle = ({
       ? type === "primary"
         ? "bg-primary-700"
         : "bg-secondary-500"
-      : "bg-[#868686]",
+      : "bg-primary-700",
     // disabled && (value ? "disabled:bg-primary-200" : "disabled:bg-neutral-400"),
     "disabled:cursor-not-allowed",
   ]

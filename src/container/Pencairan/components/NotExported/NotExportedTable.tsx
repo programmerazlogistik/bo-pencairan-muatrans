@@ -1,11 +1,13 @@
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@muatmuat/ui/Button";
+import { Checkbox } from "@muatmuat/ui/Form";
 import { Modal, ModalContent, ModalTitle } from "@muatmuat/ui/Modal";
 import { DataTableBO } from "@muatmuat/ui/Table";
 import { ColumnDef } from "@tanstack/react-table";
 
-interface PencairanData {
+interface NotExportedData {
   id: string;
   tanggal_settlement: string;
   no_invoice: string;
@@ -25,11 +27,11 @@ interface HistoryData {
   status: string;
 }
 
-interface PencairanTableBOProps {
+interface NotExportedTableProps {
   showExport: boolean;
 }
 
-const DUMMY_DATA: PencairanData[] = [
+const DUMMY_DATA: NotExportedData[] = [
   {
     id: "1",
     tanggal_settlement: "10/01/2026 10.00",
@@ -37,8 +39,8 @@ const DUMMY_DATA: PencairanData[] = [
     nominal: "Rp 1.000.000",
     rekening_tujuan: "BCA",
     nama_rekening: "John Doe",
-    jenis: "Transfer",
-    status: "Berhasil",
+    jenis: "Pencairan Transporter",
+    status: "Baru",
   },
   {
     id: "2",
@@ -47,8 +49,8 @@ const DUMMY_DATA: PencairanData[] = [
     nominal: "Rp 2.500.000",
     rekening_tujuan: "Mandiri",
     nama_rekening: "Jane Smith",
-    jenis: "Transfer",
-    status: "Pending",
+    jenis: "Refund",
+    status: "Baru",
   },
   {
     id: "3",
@@ -57,7 +59,7 @@ const DUMMY_DATA: PencairanData[] = [
     nominal: "Rp 500.000",
     rekening_tujuan: "BRI",
     nama_rekening: "Bob Johnson",
-    jenis: "Transfer",
+    jenis: "Pencairan Transporter",
     status: "Retransfer",
   },
 ];
@@ -105,7 +107,8 @@ const DUMMY_HISTORY: HistoryData[] = [
   },
 ];
 
-const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
+const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
+  const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showRetransferModal, setShowRetransferModal] = useState(false);
   const [retransferId, setRetransferId] = useState<string | null>(null);
@@ -133,7 +136,7 @@ const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
     setShowRetransferModal(true);
   };
 
-  const columns: ColumnDef<PencairanData>[] = useMemo(
+  const columns: ColumnDef<NotExportedData>[] = useMemo(
     () => [
       {
         accessorKey: "actions",
@@ -141,10 +144,9 @@ const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
         size: showExport ? 50 : 100,
         header: () =>
           showExport ? (
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isAllSelected}
-              onChange={handleSelectAll}
+              onCheckedChange={handleSelectAll}
               className="h-4 w-4 cursor-pointer"
             />
           ) : (
@@ -152,14 +154,19 @@ const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
           ),
         cell: ({ row }) =>
           showExport ? (
-            <input
-              type="checkbox"
+            <Checkbox
               checked={selectedIds.includes(row.original.id)}
-              onChange={() => handleSelectRow(row.original.id)}
+              onCheckedChange={() => handleSelectRow(row.original.id)}
               className="h-4 w-4 cursor-pointer"
             />
           ) : (
-            <Button className="h-[28px] bg-[#3ECD00] px-3 text-xs font-semibold text-white hover:bg-[#36b300]">
+            <Button
+              className="h-[28px] bg-[#3ECD00] px-3 text-xs font-semibold text-white hover:bg-[#36b300]"
+              onClick={() => {
+                const encodedId = encodeURIComponent(row.original.no_invoice);
+                router.push(`/pencairan/${encodedId}?type=invoice`);
+              }}
+            >
               Detail
             </Button>
           ),
@@ -184,38 +191,44 @@ const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
         accessorKey: "nama_rekening",
         header: "Nama Rekening",
       },
-      {
-        accessorKey: "jenis",
-        header: "Jenis",
-      },
+      ...(showExport
+        ? []
+        : [
+            {
+              accessorKey: "jenis",
+              header: "Jenis",
+              size: 125,
+              cell: ({ row }) => {
+                const jenis = row.original.jenis;
+                let textColor = "text-[#1B1B1B]";
+                if (jenis === "Pencairan Transporter") {
+                  textColor = "text-[#3ECD00]";
+                } else if (jenis === "Refund") {
+                  textColor = "text-[#FFB020]";
+                }
+                return (
+                  <span className={`font-semibold ${textColor}`}>{jenis}</span>
+                );
+              },
+            },
+          ]),
       {
         accessorKey: "status",
         header: "Status",
+        size: 125,
         cell: ({ row }) => {
           const status = row.original.status;
           if (status === "Retransfer") {
             return (
               <span
                 onClick={() => handleRetransferClick(row.original.id)}
-                className="cursor-pointer font-semibold text-[#F22C25] hover:underline"
+                className="cursor-pointer font-semibold text-[#F22C25] underline"
               >
                 {status}
               </span>
             );
           }
-          return (
-            <span
-              className={
-                status === "Berhasil"
-                  ? "text-[#3ECD00]"
-                  : status === "Pending"
-                    ? "text-[#FFB800]"
-                    : "text-[#1B1B1B]"
-              }
-            >
-              {status}
-            </span>
-          );
+          return <span className="text-[#1B1B1B]">{status}</span>;
         },
       },
     ],
@@ -299,4 +312,4 @@ const PencairanTableBO = ({ showExport }: PencairanTableBOProps) => {
   );
 };
 
-export default PencairanTableBO;
+export default NotExportedTable;

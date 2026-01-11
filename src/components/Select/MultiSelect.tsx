@@ -194,18 +194,22 @@ const Trigger = React.forwardRef<
           selectedOptions.map((option) => (
             <div
               key={option.value}
-              className="flex h-[19px] items-center gap-1 rounded-[4px] bg-[#EBEBEB] px-1 py-0.5"
+              className="flex h-[22px] items-center justify-center gap-[4px] rounded-[16px] border border-[#176CF7] bg-white px-[12px] py-[6px]"
             >
               <span
                 className={cn(
-                  "text-[12px] font-medium text-[#676767]",
-                  disabled && "text-black"
+                  "font-['Avenir_Next_LT_Pro'] text-[10px] font-semibold leading-[12px] text-[#176CF7]",
+                  disabled && "border-gray-400 text-gray-400"
                 )}
               >
                 {option.label}
               </span>
               <X
-                className="h-3 w-3 cursor-pointer text-[#676767]"
+                className={cn(
+                  "h-[12px] w-[12px] cursor-pointer text-[#176CF7]",
+                  disabled && "text-gray-400"
+                )}
+                strokeWidth={3}
                 onClick={(e) => {
                   if (disabled) return;
                   e.stopPropagation(); // Prevent dropdown from opening/closing
@@ -362,7 +366,9 @@ const List = React.forwardRef<
                 if (disabled) return;
                 toggleValue(option.value);
               }}
-              className="border-[#176CF7]"
+              appearance={{
+                labelClassName: "font-['Avenir_Next_LT_Pro'] text-[12px] font-normal ",
+              }}
               disabled={disabled}
             />
           ))
