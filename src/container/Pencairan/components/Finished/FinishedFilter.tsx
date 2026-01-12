@@ -77,7 +77,7 @@ const FinishedFilter = ({
   // Detail View Filter
   if (isDetailView) {
     return (
-      <div className="flex w-full flex-col items-start gap-[10px] rounded-[10px] border border-[#A8A8A8] p-[10px]">
+      <div className="flex w-full flex-col items-start rounded-[10px] border border-[#A8A8A8] p-[10px]">
         {/* Row 1: Bank Filters */}
         <div className="flex w-full flex-row items-center justify-between gap-[10px]">
           <div className="flex flex-row flex-wrap items-center gap-[12px]">
@@ -275,7 +275,7 @@ const FinishedFilter = ({
 
   // Batch View Filter (original filter)
   return (
-    <div className="flex w-full flex-col items-start gap-[10px]">
+    <div className="flex w-full flex-col items-start">
       {/* Row: Filter Button */}
       <div className="flex w-full flex-row items-center justify-end gap-[10px]">
         <div className="flex flex-row items-center gap-[12px]">
@@ -293,14 +293,14 @@ const FinishedFilter = ({
       {/* Advanced Filter Section */}
       <div
         className={cn(
-          "grid w-full rounded-[10px] border border-[#A8A8A8] p-2.5 transition-all duration-300 ease-in-out",
+          "grid w-full rounded-[10px] transition-all duration-300 ease-in-out",
           showFilter
-            ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0"
+            ? "mt-2.5 grid-rows-[1fr] border border-[#A8A8A8] p-2.5 opacity-100"
+            : "grid-rows-[0fr] border-0 p-0 opacity-0"
         )}
       >
         <div className="overflow-hidden">
-          <div className="mt-4 flex w-full flex-col gap-5">
+          <div className="flex w-full flex-col gap-5">
             <span className="text-[14px] font-semibold">Filter</span>
             <div className="flex w-full flex-row items-start gap-5">
               {/* Left Column */}

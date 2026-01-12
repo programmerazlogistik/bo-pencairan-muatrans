@@ -1,4 +1,4 @@
-import FinishedDetailContainer from "@/container/Pencairan/FinishedDetailContainer";
+import FinishedDetailContainer from "@/container/DetailPencairan/DetailContainer";
 
 interface PageProps {
   params: Promise<{ id: string }>;

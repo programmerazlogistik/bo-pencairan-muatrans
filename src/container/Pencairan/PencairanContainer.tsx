@@ -81,11 +81,16 @@ const PencairanContainer = () => {
     setShowExport(false);
   };
 
+  const handleFinishedViewChange = (isDetail: boolean) => {
+    setFinishedDetailView(isDetail);
+    setShowFilter(false);
+  };
+
   return (
     <div className="flex flex-col gap-2.5">
       <PageTitle
-        className="text-2xl"
-        appearance={{ iconClassName: "text-black" }}
+        className="!mb-[0px] text-2xl"
+        appearance={{ iconClassName: "text-black " }}
       >
         Pencairan
       </PageTitle>
@@ -174,7 +179,7 @@ const PencairanContainer = () => {
           {activeTab === "Finished" && (
             <FinishedTable
               isDetailView={finishedDetailView}
-              setIsDetailView={setFinishedDetailView}
+              setIsDetailView={handleFinishedViewChange}
             />
           )}
         </div>

@@ -7,7 +7,7 @@ interface NotExportedSummaryProps {
 
 const NotExportedSummary = ({ showExport }: NotExportedSummaryProps) => {
   return (
-    <div className="flex w-[962px] flex-col gap-y-[8px]">
+    <div className="flex w-[962px] flex-col ">
       {/* Top Row: Total & Biaya Admin */}
       <div className="flex flex-row items-center">
         {/* Total */}

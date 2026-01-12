@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Checkbox } from "@muatmuat/ui/Form";
@@ -76,6 +77,7 @@ const ExportedTable = ({
   bulkAction,
   onSelectionChange,
 }: ExportedTableProps) => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -136,7 +138,11 @@ const ExportedTable = ({
               <ActionDropdown.Trigger />
               <ActionDropdown.Content>
                 <ActionDropdown.Item
-                  onClick={() => console.log("Detail clicked", row.original.id)}
+                  onClick={() =>
+                    router.push(
+                      `/pencairan/detail/${encodeURIComponent(row.original.id_export)}?type=batch`
+                    )
+                  }
                 >
                   Detail
                 </ActionDropdown.Item>
