@@ -1,12 +1,11 @@
-import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import { Button } from "@muatmuat/ui/Button";
 import { DataTableBO } from "@muatmuat/ui/Table";
-import { ColumnDef } from "@tanstack/react-table";
 
 import { ActionDropdown } from "@/components/Dropdown/ActionDropdown";
 import Toggle from "@/components/Toggle/Toggle";
-import { useRouter } from "next/navigation";
 
 // Detail view data structure (transaction level)
 interface DetailData {
@@ -150,14 +149,14 @@ const FinishedTable = ({
   const router = useRouter();
 
   // Detail view columns (toggleValue = true)
-  const detailColumns: ColumnDef<DetailData>[] = useMemo(
+  const detailColumns = useMemo(
     () => [
       {
         accessorKey: "actions",
         enableSorting: false,
         size: 100,
         header: "Action",
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           const handleDetailClick = () => {
             const encodedId = encodeURIComponent(row.original.trx_id);
             router.push(`/pencairan/${encodedId}?type=trx`);
@@ -213,14 +212,14 @@ const FinishedTable = ({
   );
 
   // Batch view columns (toggleValue = false)
-  const batchColumns: ColumnDef<BatchData>[] = useMemo(
+  const batchColumns = useMemo(
     () => [
       {
         accessorKey: "actions",
         enableSorting: false,
         size: 100,
         header: "Action",
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           const handleDetailClick = () => {
             const encodedId = encodeURIComponent(row.original.id_export);
             router.push(`/pencairan/${encodedId}?type=batch`);
@@ -284,6 +283,50 @@ const FinishedTable = ({
     []
   );
 
+  const [detailPagination, setDetailPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const [batchPagination, setBatchPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const detailData = useMemo(() => {
+    const start = detailPagination.pageIndex * detailPagination.pageSize;
+    const end = start + detailPagination.pageSize;
+    return DUMMY_DETAIL_DATA.slice(start, end);
+  }, [detailPagination]);
+
+  const batchData = useMemo(() => {
+    const start = batchPagination.pageIndex * batchPagination.pageSize;
+    const end = start + batchPagination.pageSize;
+    return DUMMY_BATCH_DATA.slice(start, end);
+  }, [batchPagination]);
+
+  const detailPaginationData = useMemo(
+    () => ({
+      currentPage: detailPagination.pageIndex + 1,
+      itemsPerPage: detailPagination.pageSize,
+      totalItems: DUMMY_DETAIL_DATA.length,
+      totalPages: Math.ceil(
+        DUMMY_DETAIL_DATA.length / detailPagination.pageSize
+      ),
+    }),
+    [detailPagination]
+  );
+
+  const batchPaginationData = useMemo(
+    () => ({
+      currentPage: batchPagination.pageIndex + 1,
+      itemsPerPage: batchPagination.pageSize,
+      totalItems: DUMMY_BATCH_DATA.length,
+      totalPages: Math.ceil(DUMMY_BATCH_DATA.length / batchPagination.pageSize),
+    }),
+    [batchPagination]
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-2">
@@ -292,12 +335,24 @@ const FinishedTable = ({
         <span className="text-xs font-medium">Tampilan Detail</span>
       </div>
       {isDetailView ? (
-        <DataTableBO.Root data={DUMMY_DETAIL_DATA} columns={detailColumns}>
+        <DataTableBO.Root
+          data={detailData}
+          columns={detailColumns}
+          pagination={detailPagination}
+          onPaginationChange={setDetailPagination}
+          paginationData={detailPaginationData}
+        >
           <DataTableBO.Content />
           <DataTableBO.Pagination />
         </DataTableBO.Root>
       ) : (
-        <DataTableBO.Root data={DUMMY_BATCH_DATA} columns={batchColumns}>
+        <DataTableBO.Root
+          data={batchData}
+          columns={batchColumns}
+          pagination={batchPagination}
+          onPaginationChange={setBatchPagination}
+          paginationData={batchPaginationData}
+        >
           <DataTableBO.Content />
           <DataTableBO.Pagination />
         </DataTableBO.Root>

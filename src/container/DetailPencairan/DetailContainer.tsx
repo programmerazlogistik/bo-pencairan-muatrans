@@ -35,6 +35,42 @@ interface BatchTableData {
   status_settlement: string;
 }
 
+// TRX table data structure (for detail view from Finished)
+interface TrxTableData {
+  id: string;
+  tanggal_settlement: string;
+  no_invoice: string;
+  nominal_pencairan: string;
+}
+
+// Dummy data for TRX table
+const TRX_TABLE_DATA: TrxTableData[] = [
+  {
+    id: "1",
+    tanggal_settlement: "10/01/2026 15.00",
+    no_invoice: "INV/2026/001",
+    nominal_pencairan: "Rp 2.000.000",
+  },
+  {
+    id: "2",
+    tanggal_settlement: "09/01/2026 14.30",
+    no_invoice: "INV/2026/002",
+    nominal_pencairan: "Rp 3.000.000",
+  },
+  {
+    id: "3",
+    tanggal_settlement: "08/01/2026 13.20",
+    no_invoice: "INV/2026/003",
+    nominal_pencairan: "Rp 5.000.000",
+  },
+  {
+    id: "4",
+    tanggal_settlement: "07/01/2026 11.45",
+    no_invoice: "INV/2026/004",
+    nominal_pencairan: "Rp 2.500.000",
+  },
+];
+
 // Dummy data for batch table
 const BATCH_TABLE_DATA: BatchTableData[] = [
   {
@@ -239,6 +275,39 @@ const DetailContainer = ({ id }: DetailContainerProps) => {
     }
   };
 
+  // TRX table columns (for detail view from Finished)
+  const trxTableColumns: ColumnDef<TrxTableData>[] = useMemo(
+    () => [
+      {
+        accessorKey: "actions",
+        enableSorting: false,
+        size: 100,
+        header: "Action",
+        cell: ({ row }) => (
+          <Button
+            className="h-[28px] bg-[#3ECD00] px-3 text-xs font-semibold text-white hover:bg-[#36b300]"
+            onClick={() => console.log("Detail clicked", row.original.id)}
+          >
+            Detail
+          </Button>
+        ),
+      },
+      {
+        accessorKey: "tanggal_settlement",
+        header: "Tanggal Settlement",
+      },
+      {
+        accessorKey: "no_invoice",
+        header: "No Invoice",
+      },
+      {
+        accessorKey: "nominal_pencairan",
+        header: "Nominal Pencairan",
+      },
+    ],
+    []
+  );
+
   // Batch table columns
   const batchTableColumns: ColumnDef<BatchTableData>[] = useMemo(
     () => [
@@ -413,6 +482,16 @@ const DetailContainer = ({ id }: DetailContainerProps) => {
           );
         })}
       </div>
+
+      {/* TRX Table Section (from Finished Detail View) */}
+      {type === "trx" && (
+        <div className="mt-[20px] w-full">
+          <DataTableBO.Root data={TRX_TABLE_DATA} columns={trxTableColumns}>
+            <DataTableBO.Content />
+            <DataTableBO.Pagination />
+          </DataTableBO.Root>
+        </div>
+      )}
 
       {/* Batch Summary Section */}
       {type === "batch" && (

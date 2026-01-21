@@ -1,29 +1,26 @@
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@muatmuat/lib/utils";
 import { Button } from "@muatmuat/ui/Button";
-import { DatePickerWeb } from "@muatmuat/ui/Calendar";
+// Changed from DatePickerWeb
 import { Input, NumberInput } from "@muatmuat/ui/Form";
+
+// NumberInput is still used for nominal
+
+import {
+  NotExportedListFilter,
+  useNotExportedList,
+} from "@/services/Pencairan/useNotExported";
+
+import { useNotExportedStore } from "@/store/Pencairan/useNotExportedStore";
+import { DatePickerWeb } from "@muatmuat/ui/Calendar";
 
 interface NotExportedFilterProps {
   showFilter: boolean;
-  setShowFilter: Dispatch<SetStateAction<boolean>>;
+  setShowFilter: (show: boolean) => void; // Updated type
   showExport: boolean;
-  setShowExport: Dispatch<SetStateAction<boolean>>;
+  setShowExport: (show: boolean) => void; // Updated type
 }
-
-const BANK_FILTERS = [
-  { label: "BCA", count: 3 },
-  { label: "BRI", count: 2 },
-  { label: "Mandiri", count: 4 },
-  { label: "SMBC", count: 1 },
-];
-
-const STATUS_FILTERS = [
-  { label: "All", value: "all", count: 10 },
-  { label: "Baru", value: "baru", count: 10 },
-  { label: "Retransfer", value: "retransfer", count: 3 },
-];
 
 const NotExportedFilter = ({
   showFilter,
@@ -31,15 +28,38 @@ const NotExportedFilter = ({
   showExport,
   setShowExport,
 }: NotExportedFilterProps) => {
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
-  const [nominalMin, setNominalMin] = useState<number | undefined>(undefined);
-  const [nominalMax, setNominalMax] = useState<number | undefined>(undefined);
+  const { filters, setFilters } = useNotExportedStore();
+
+  // Local state for draft filters
+  const [localParams, setLocalParams] =
+    useState<NotExportedListFilter>(filters);
+
+  // Sync local params with store params when store params change (e.g. reset)
+  useEffect(() => {
+    setLocalParams(filters);
+  }, [filters]);
+
+  const { data } = useNotExportedList({});
+
+  const statusFilters = [
+    { label: "All", value: "all", count: data?.Summary?.all || 0 },
+    { label: "Baru", value: "baru", count: data?.Summary?.new || 0 },
+    {
+      label: "Retransfer",
+      value: "retransfer",
+      count: data?.Summary?.retransfer || 0,
+    },
+  ];
+
+  const bankFilters = data?.Summary?.banks || [];
+
+  const selectedStatus = localParams.status || "all";
+  const selectedBanks = localParams.banks || [];
 
   const nominalMaxError =
-    nominalMin !== undefined &&
-    nominalMax !== undefined &&
-    nominalMax < nominalMin
+    localParams.nominalMin !== undefined &&
+    localParams.nominalMax !== undefined &&
+    localParams.nominalMax < localParams.nominalMin
       ? "Harus lebih besar dari nominal awal"
       : undefined;
 
@@ -59,22 +79,43 @@ const NotExportedFilter = ({
   }, [nominalMaxError]);
 
   const handleStatusClick = (value: string) => {
-    setSelectedStatus(value);
+    const newStatus = value === "all" ? undefined : value; // Convert "all" to undefined for the store
+    const newParams = { ...localParams, status: newStatus };
+    setLocalParams(newParams);
+    setFilters(newParams); // Apply status immediately
   };
 
-  const handleBankClick = (label: string) => {
-    setSelectedBanks((prev) =>
-      prev.includes(label)
-        ? prev.filter((bank) => bank !== label)
-        : [...prev, label]
-    );
+  const handleBankClick = (bankLabel: string) => {
+    let newBanks = [...(localParams.banks || [])]; // Use localParams.banks
+    if (newBanks.includes(bankLabel)) {
+      newBanks = newBanks.filter((b) => b !== bankLabel);
+    } else {
+      newBanks.push(bankLabel);
+    }
+    const newParams = { ...localParams, banks: newBanks };
+    setLocalParams(newParams);
+    setFilters(newParams); // Apply banks immediately
+  };
+
+  const handleApply = () => {
+    setFilters(localParams);
+  };
+
+  const handleReset = () => {
+    setFilters({}); // Reset store
+    // localParams will be updated via the useEffect when filters change
+  };
+
+  // Helper to update local keys
+  const updateLocal = (key: keyof NotExportedListFilter, value: any) => {
+    setLocalParams((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <div className="flex w-full flex-col items-start gap-[10px] rounded-[10px] border border-[#A8A8A8] p-[10px]">
       {/* Row 1: Status Filters */}
       <div className="flex flex-row gap-[15px]">
-        {STATUS_FILTERS.map((status) => (
+        {statusFilters.map((status) => (
           <Button
             key={status.value}
             variant={
@@ -92,7 +133,7 @@ const NotExportedFilter = ({
       {/* Row 2: Bank Filters and Actions */}
       <div className="flex w-full flex-row items-center justify-between gap-[10px]">
         <div className="flex flex-row flex-wrap items-center gap-[12px]">
-          {BANK_FILTERS.map((bank) => (
+          {bankFilters.map((bank) => (
             <Button
               key={bank.label}
               variant={
@@ -152,6 +193,8 @@ const NotExportedFilter = ({
                     appearance={{
                       containerClassName: "h-[35px] rounded-[6px]",
                     }}
+                    value={localParams.search || ""}
+                    onChange={(e) => updateLocal("search", e.target.value)}
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
@@ -164,6 +207,10 @@ const NotExportedFilter = ({
                     appearance={{
                       containerClassName: "h-[35px] rounded-[6px]",
                     }}
+                    value={localParams.rekeningTujuan || ""}
+                    onChange={(e) =>
+                      updateLocal("rekeningTujuan", e.target.value)
+                    }
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
@@ -176,6 +223,10 @@ const NotExportedFilter = ({
                     appearance={{
                       containerClassName: "h-[35px] rounded-[6px]",
                     }}
+                    value={localParams.namaRekening || ""}
+                    onChange={(e) =>
+                      updateLocal("namaRekening", e.target.value)
+                    }
                   />
                 </div>
                 <div className="flex flex-row items-center gap-3">
@@ -189,8 +240,10 @@ const NotExportedFilter = ({
                       hideStepper
                       text={{ left: "Rp" }}
                       defaultValue={null}
-                      value={nominalMin ?? null}
-                      onValueChange={setNominalMin}
+                      value={localParams.nominalMin ?? null}
+                      onValueChange={(val) =>
+                        updateLocal("nominalMin", val ?? undefined)
+                      }
                     />
                     <span className="pt-2 text-xs text-[#1B1B1B]">s/d</span>
                     <NumberInput
@@ -199,8 +252,13 @@ const NotExportedFilter = ({
                       hideStepper
                       text={{ left: "Rp" }}
                       defaultValue={null}
-                      value={nominalMax ?? null}
-                      onValueChange={setNominalMax}
+                      value={localParams.nominalMax ?? null}
+                      onValueChange={(val) =>
+                        setLocalParams({
+                          ...localParams,
+                          nominalMax: val ?? undefined,
+                        })
+                      }
                       errorMessage={debouncedError}
                     />
                   </div>
@@ -217,11 +275,33 @@ const NotExportedFilter = ({
                     <DatePickerWeb
                       placeholder="Pilih Tanggal"
                       className="w-full flex-1"
+                      value={
+                        localParams.startDate
+                          ? new Date(localParams.startDate)
+                          : undefined
+                      }
+                      onChange={(date) =>
+                        setLocalParams({
+                          ...localParams,
+                          startDate: date ? date.toISOString() : undefined,
+                        })
+                      }
                     />
                     <span className="text-xs text-[#1B1B1B]">s/d</span>
                     <DatePickerWeb
                       placeholder="Pilih Tanggal"
                       className="w-full flex-1"
+                      value={
+                        localParams.endDate
+                          ? new Date(localParams.endDate)
+                          : undefined
+                      }
+                      onChange={(date) =>
+                        setLocalParams({
+                          ...localParams,
+                          endDate: date ? date.toISOString() : undefined,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -232,10 +312,16 @@ const NotExportedFilter = ({
       </div>
       {showFilter && (
         <div className="flex w-full flex-row justify-end gap-3">
-          <Button className="h-[32px] rounded-[20px] border border-[#F71717] bg-white px-6 text-sm font-semibold text-[#F71717] hover:bg-red-50">
+          <Button
+            className="h-[32px] rounded-[20px] border border-[#F71717] bg-white px-6 text-sm font-semibold text-[#F71717] hover:bg-red-50"
+            onClick={handleReset}
+          >
             Reset
           </Button>
-          <Button className="h-[32px] rounded-[20px] border border-[#176CF7] bg-[#176CF7] px-6 text-sm font-semibold text-white hover:bg-[#1560db]">
+          <Button
+            className="h-[32px] rounded-[20px] border border-[#176CF7] bg-[#176CF7] px-6 text-sm font-semibold text-white hover:bg-[#1560db]"
+            onClick={handleApply}
+          >
             Terapkan
           </Button>
         </div>

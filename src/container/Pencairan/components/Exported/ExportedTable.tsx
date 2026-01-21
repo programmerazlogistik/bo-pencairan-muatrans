@@ -3,88 +3,48 @@ import { useMemo, useState } from "react";
 
 import { Checkbox } from "@muatmuat/ui/Form";
 import { DataTableBO } from "@muatmuat/ui/Table";
-import { ColumnDef } from "@tanstack/react-table";
+
+import {
+  ExportedListFilter,
+  useExportedList,
+} from "@/services/Pencairan/useExported";
 
 import { ActionDropdown } from "@/components/Dropdown/ActionDropdown";
 
 import UbahBiayaAdminModal from "./UbahBiayaAdminModal";
 
-interface ExportedData {
-  id: string;
-  id_export: string;
-  tanggal_export: string;
-  status_selesai: string;
-  nominal_pencairan: string;
-  bank: string;
-  jumlah_rekening: number;
-  bank_pengirim: string;
-  nama_user_export: string;
-}
-
-const DUMMY_DATA: ExportedData[] = [
-  {
-    id: "1",
-    id_export: "EXP/2026/001",
-    tanggal_export: "10/01/2026 10.00",
-    status_selesai: "Selesai",
-    nominal_pencairan: "Rp 10.000.000",
-    bank: "BCA",
-    jumlah_rekening: 15,
-    bank_pengirim: "BCA",
-    nama_user_export: "Admin User",
-  },
-  {
-    id: "2",
-    id_export: "EXP/2026/002",
-    tanggal_export: "09/01/2026 14.30",
-    status_selesai: "Proses",
-    nominal_pencairan: "Rp 25.500.000",
-    bank: "Mandiri",
-    jumlah_rekening: 23,
-    bank_pengirim: "Mandiri",
-    nama_user_export: "John Doe",
-  },
-  {
-    id: "3",
-    id_export: "EXP/2026/003",
-    tanggal_export: "08/01/2026 09.15",
-    status_selesai: "Selesai",
-    nominal_pencairan: "Rp 5.000.000",
-    bank: "BRI",
-    jumlah_rekening: 8,
-    bank_pengirim: "BRI",
-    nama_user_export: "Jane Smith",
-  },
-  {
-    id: "4",
-    id_export: "EXP/2026/004",
-    tanggal_export: "07/01/2026 11.45",
-    status_selesai: "Selesai",
-    nominal_pencairan: "Rp 15.750.000",
-    bank: "SMBC",
-    jumlah_rekening: 12,
-    bank_pengirim: "SMBC",
-    nama_user_export: "Admin User",
-  },
-];
-
 interface ExportedTableProps {
   bulkAction?: string | null;
   onSelectionChange?: (count: number) => void;
+  filters?: ExportedListFilter;
 }
 
 const ExportedTable = ({
   bulkAction,
   onSelectionChange,
+  filters = {},
 }: ExportedTableProps) => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  // Fetch data using service hook
+  const { data, isLoading } = useExportedList({
+    ...filters,
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+  });
+
+  const items = data?.Data || [];
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(DUMMY_DATA.map((item) => item.id));
+      const allIds = new Set(items.map((item) => item.id));
       setSelectedRows(allIds);
       onSelectionChange?.(allIds.size);
     } else {
@@ -103,7 +63,7 @@ const ExportedTable = ({
     setSelectedRows(newSelected);
     onSelectionChange?.(newSelected.size);
   };
-  const columns: ColumnDef<ExportedData>[] = useMemo(
+  const columns = useMemo(
     () => [
       {
         accessorKey: "actions",
@@ -112,16 +72,14 @@ const ExportedTable = ({
         header: () =>
           bulkAction ? (
             <Checkbox
-              checked={
-                selectedRows.size === DUMMY_DATA.length && DUMMY_DATA.length > 0
-              }
+              checked={selectedRows.size === items.length && items.length > 0}
               onCheckedChange={(checked) => handleSelectAll(checked === true)}
               className="h-4 w-4 cursor-pointer"
             />
           ) : (
             "Action"
           ),
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           if (bulkAction) {
             return (
               <Checkbox
@@ -201,7 +159,7 @@ const ExportedTable = ({
             {
               accessorKey: "status_selesai",
               header: "Status Selesai",
-              cell: ({ row }) => {
+              cell: ({ row }: any) => {
                 const status = row.original.status_selesai;
                 return <span>{status}</span>;
               },
@@ -210,6 +168,8 @@ const ExportedTable = ({
       {
         accessorKey: "nominal_pencairan",
         header: "Nominal Pencairan",
+        cell: ({ row }: any) =>
+          `Rp ${row.original.nominal_pencairan.toLocaleString("id-ID")}`,
       },
       {
         accessorKey: "bank",
@@ -232,17 +192,36 @@ const ExportedTable = ({
             {
               accessorKey: "status_sukses",
               header: "Status Sukses",
-              cell: ({ row }) => <span>{row.original.status_sukses}</span>,
+              cell: ({ row }: any) => <span>{row.original.status_sukses}</span>,
             },
           ]
         : []),
     ],
-    [bulkAction, selectedRows]
+    [bulkAction, selectedRows, items]
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <>
-      <DataTableBO.Root data={DUMMY_DATA} columns={columns}>
+      <DataTableBO.Root
+        data={items}
+        columns={columns}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        paginationData={{
+          currentPage: data?.Pagination?.currentPage || 1,
+          itemsPerPage: data?.Pagination?.itemsPerPage || 10,
+          totalItems: data?.Pagination?.totalItems || 0,
+          totalPages: data?.Pagination?.totalPages || 1,
+        }}
+      >
         <DataTableBO.Content />
         <DataTableBO.Pagination />
       </DataTableBO.Root>

@@ -5,7 +5,11 @@ import { useState } from "react";
 import { cn } from "@muatmuat/lib/utils";
 import { ConfirmationModal } from "@muatmuat/ui/Modal";
 
+import { useNotExportedList } from "@/services/Pencairan/useNotExported";
+
 import PageTitle from "@/components/PageTitle/PageTitle";
+
+import { useNotExportedStore } from "@/store/Pencairan/useNotExportedStore";
 
 import ExportedFilter from "./components/Exported/ExportedFilter";
 import ExportedSummary from "./components/Exported/ExportedSummary";
@@ -42,18 +46,63 @@ const PencairanContainer = () => {
   const [bulkAction, setBulkAction] = useState<string | null>(null);
   const [selectedCount, setSelectedCount] = useState(0);
   const [finishedDetailView, setFinishedDetailView] = useState(true);
+  const [pendingExportCallback, setPendingExportCallback] = useState<
+    (() => Promise<void>) | null
+  >(null);
 
-  const handleExport = () => {
+  // Store state
+  const {
+    filters,
+    pagination,
+    sorting,
+    selectedIds,
+    adminFees,
+    reset: resetStore,
+  } = useNotExportedStore();
+
+  const {
+    data: notExportedData,
+    isLoading: isNotExportedLoading,
+    mutate,
+  } = useNotExportedList({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...filters,
+    sortBy: sorting.length > 0 ? sorting[0].id : undefined,
+    sortDir:
+      sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : undefined,
+  });
+
+  // Derived state for summary
+  const totalCount = notExportedData?.Pagination?.totalItems || 0;
+  const totalNominal = notExportedData?.Summary?.totalValue || 0;
+
+  const handleExportRequest = (callback: () => Promise<void>) => {
+    setPendingExportCallback(() => callback);
     setShowConfirmationModal(true);
   };
 
-  const handleConfirmExport = () => {
-    // Implement actual export logic here
-    console.log("Export confirmed");
+  const handleConfirmExport = async () => {
     setShowConfirmationModal(false);
-    setTimeout(() => {
-      setShowSuccessModal(true);
-    }, 300);
+    if (pendingExportCallback) {
+      await pendingExportCallback();
+      setPendingExportCallback(null);
+    }
+  };
+
+  const handleExportSuccess = (exportId: string) => {
+    setShowExport(false);
+    setShowSuccessModal(true);
+    // Reset store after successful export
+    resetStore();
+    // Refresh the list
+    notExportedData && mutate();
+  };
+
+  const handleExportError = (error: Error) => {
+    console.error("Export failed:", error);
+    // You can show an error toast here
+    alert(`Export gagal: ${error.message}`);
   };
 
   const handleBulkActionRequest = (action: string | null) => {
@@ -79,6 +128,10 @@ const PencairanContainer = () => {
     setBulkAction(null);
     setSelectedCount(0);
     setShowExport(false);
+    if (tabValue === "Not Exported") {
+      // Optional: Reset NotExported store when entering tab?
+      // Or keep state? Usually keep state unless requested.
+    }
   };
 
   const handleFinishedViewChange = (isDetail: boolean) => {
@@ -128,7 +181,13 @@ const PencairanContainer = () => {
 
       {/* Summary Section */}
       {activeTab === "Not Exported" && (
-        <NotExportedSummary showExport={showExport} />
+        <NotExportedSummary
+          showExport={showExport}
+          totalCount={totalCount}
+          totalNominal={totalNominal}
+          summaryData={notExportedData?.Summary}
+          dataList={notExportedData?.Data}
+        />
       )}
       {activeTab === "Exported" && (
         <ExportedSummary
@@ -168,7 +227,12 @@ const PencairanContainer = () => {
       <div className="flex w-full flex-row">
         <div className="flex-1 overflow-hidden">
           {activeTab === "Not Exported" && (
-            <NotExportedTable showExport={showExport} />
+            <NotExportedTable
+              showExport={showExport}
+              data={notExportedData?.Data || []}
+              paginationData={notExportedData?.Pagination}
+              loading={isNotExportedLoading}
+            />
           )}
           {activeTab === "Exported" && (
             <ExportedTable
@@ -194,7 +258,12 @@ const PencairanContainer = () => {
         >
           {activeTab === "Not Exported" && (
             <div className="overflow-hidden">
-              <PencairanExportSidebar onExport={handleExport} />
+              <PencairanExportSidebar
+                onExportRequest={handleExportRequest}
+                onExportSuccess={handleExportSuccess}
+                onExportError={handleExportError}
+                dataList={notExportedData?.Data}
+              />
             </div>
           )}
         </div>

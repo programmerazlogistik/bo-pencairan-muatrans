@@ -5,115 +5,45 @@ import { Button } from "@muatmuat/ui/Button";
 import { Checkbox } from "@muatmuat/ui/Form";
 import { Modal, ModalContent, ModalTitle } from "@muatmuat/ui/Modal";
 import { DataTableBO } from "@muatmuat/ui/Table";
-import { ColumnDef } from "@tanstack/react-table";
 
-interface NotExportedData {
-  id: string;
-  tanggal_settlement: string;
-  no_invoice: string;
-  nominal: string;
-  rekening_tujuan: string;
-  nama_rekening: string;
-  jenis: string;
-  status: string;
-}
+import {
+  NotExportedListItem,
+  useNotExportedHistory,
+} from "@/services/Pencairan/useNotExported";
 
-interface HistoryData {
-  tanggal: string;
-  trxId: string;
-  nominal: string;
-  rekening: string;
-  namaRekening: string;
-  status: string;
-}
+import { useNotExportedStore } from "@/store/Pencairan/useNotExportedStore";
 
 interface NotExportedTableProps {
   showExport: boolean;
+  data: NotExportedListItem[];
+  loading?: boolean;
+  paginationData?: any;
 }
 
-const DUMMY_DATA: NotExportedData[] = [
-  {
-    id: "1",
-    tanggal_settlement: "10/01/2026 10.00",
-    no_invoice: "INV/2026/001",
-    nominal: "Rp 1.000.000",
-    rekening_tujuan: "BCA",
-    nama_rekening: "John Doe",
-    jenis: "Pencairan Transporter",
-    status: "Baru",
-  },
-  {
-    id: "2",
-    tanggal_settlement: "11/01/2026 14.30",
-    no_invoice: "INV/2026/002",
-    nominal: "Rp 2.500.000",
-    rekening_tujuan: "Mandiri",
-    nama_rekening: "Jane Smith",
-    jenis: "Refund",
-    status: "Baru",
-  },
-  {
-    id: "3",
-    tanggal_settlement: "12/01/2026 09.15",
-    no_invoice: "INV/2026/003",
-    nominal: "Rp 500.000",
-    rekening_tujuan: "BRI",
-    nama_rekening: "Bob Johnson",
-    jenis: "Pencairan Transporter",
-    status: "Retransfer",
-  },
-];
-
-const DUMMY_HISTORY: HistoryData[] = [
-  {
-    tanggal: "28/01/2024 10.00",
-    trxId: "TRX/02/25/25",
-    nominal: "Rp1.500.000",
-    rekening: "BCA - 00012412421",
-    namaRekening: "Mulyo",
-    status: "Retransfer",
-  },
-  {
-    tanggal: "28/01/2024 10.00",
-    trxId: "TRX/02/25/25",
-    nominal: "Rp1.500.000",
-    rekening: "Mandiri - 244567189912",
-    namaRekening: "Mulyo",
-    status: "Retransfer",
-  },
-  {
-    tanggal: "28/01/2024 10.00",
-    trxId: "TRX/02/25/25",
-    nominal: "Rp1.500.000",
-    rekening: "BRI - 000124129424",
-    namaRekening: "Mulyo",
-    status: "Retransfer",
-  },
-  {
-    tanggal: "28/01/2024 10.00",
-    trxId: "TRX/02/25/25",
-    nominal: "Rp1.500.000",
-    rekening: "BNI - 123418481294",
-    namaRekening: "Mulyo",
-    status: "Retransfer",
-  },
-  {
-    tanggal: "-",
-    trxId: "-",
-    nominal: "Rp1.500.000",
-    rekening: "BCA - 1249921401204",
-    namaRekening: "Mulyo",
-    status: "Baru",
-  },
-];
-
-const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
+const NotExportedTable = ({
+  showExport,
+  data,
+  loading,
+  paginationData,
+}: NotExportedTableProps) => {
   const router = useRouter();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showRetransferModal, setShowRetransferModal] = useState(false);
   const [retransferId, setRetransferId] = useState<string | null>(null);
 
-  const allIds = DUMMY_DATA.map((item) => item.id);
+  const {
+    pagination,
+    setPagination,
+    sorting,
+    setSorting,
+    selectedIds,
+    setSelectedIds,
+  } = useNotExportedStore();
+
+  const { data: historyData } = useNotExportedHistory(
+    showRetransferModal ? retransferId : null
+  );
+
+  const allIds = data.map((item) => item.id) || [];
   const isAllSelected =
     allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
 
@@ -126,8 +56,10 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
   };
 
   const handleSelectRow = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    setSelectedIds(
+      selectedIds.includes(id)
+        ? selectedIds.filter((i) => i !== id)
+        : [...selectedIds, id]
     );
   };
 
@@ -136,7 +68,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
     setShowRetransferModal(true);
   };
 
-  const columns: ColumnDef<NotExportedData>[] = useMemo(
+  const columns = useMemo(
     () => [
       {
         accessorKey: "actions",
@@ -152,7 +84,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
           ) : (
             "Action"
           ),
-        cell: ({ row }) =>
+        cell: ({ row }: any) =>
           showExport ? (
             <Checkbox
               checked={selectedIds.includes(row.original.id)}
@@ -198,7 +130,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
               accessorKey: "jenis",
               header: "Jenis",
               size: 125,
-              cell: ({ row }) => {
+              cell: ({ row }: any) => {
                 const jenis = row.original.jenis;
                 let textColor = "text-[#1B1B1B]";
                 if (jenis === "Pencairan Transporter") {
@@ -216,7 +148,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
         accessorKey: "status",
         header: "Status",
         size: 125,
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           const status = row.original.status;
           if (status === "Retransfer") {
             return (
@@ -235,7 +167,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
     [showExport, selectedIds, isAllSelected]
   );
 
-  const historyColumns: ColumnDef<HistoryData>[] = useMemo(
+  const historyColumns = useMemo(
     () => [
       {
         accessorKey: "tanggal",
@@ -266,7 +198,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
         accessorKey: "status",
         header: "Status",
         size: 125,
-        cell: ({ row }) => (
+        cell: ({ row }: any) => (
           <span
             className={`text-[12px] leading-[14px] ${
               row.original.status === "Retransfer"
@@ -282,9 +214,33 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
     []
   );
 
+  const tableData = useMemo(() => data || [], [data]);
+
+  const defaultPaginationData = useMemo(
+    () => ({
+      currentPage: 1,
+      itemsPerPage: 10,
+      totalItems: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+      nextPage: null,
+      prevPage: null,
+    }),
+    []
+  );
+
   return (
     <>
-      <DataTableBO.Root data={DUMMY_DATA} columns={columns}>
+      <DataTableBO.Root
+        data={tableData}
+        columns={columns}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        paginationData={paginationData || defaultPaginationData}
+        sorting={sorting}
+        onSortingChange={setSorting}
+      >
         <DataTableBO.Content />
         <DataTableBO.Pagination />
       </DataTableBO.Root>
@@ -302,7 +258,7 @@ const NotExportedTable = ({ showExport }: NotExportedTableProps) => {
             INV/0101/02/2025
           </div>
           <div className="h-fit w-full">
-            <DataTableBO.Root data={DUMMY_HISTORY} columns={historyColumns}>
+            <DataTableBO.Root data={historyData || []} columns={historyColumns}>
               <DataTableBO.Content />
             </DataTableBO.Root>
           </div>

@@ -1,24 +1,71 @@
-import { cn } from "@muatmuat/lib/utils";
+import { cn, idrFormat } from "@muatmuat/lib/utils";
 import { Checkbox } from "@muatmuat/ui/Form";
+
+import {
+  NotExportedListItem,
+  NotExportedSummary as NotExportedSummaryType,
+} from "@/services/Pencairan/useNotExported";
+
+import { useNotExportedStore } from "@/store/Pencairan/useNotExportedStore";
 
 interface NotExportedSummaryProps {
   showExport: boolean;
+  totalCount: number;
+  totalNominal: number;
+  summaryData?: NotExportedSummaryType;
+  dataList?: NotExportedListItem[];
 }
 
-const NotExportedSummary = ({ showExport }: NotExportedSummaryProps) => {
+const NotExportedSummary = ({
+  showExport,
+  totalCount,
+  totalNominal,
+  summaryData,
+  dataList = [],
+}: NotExportedSummaryProps) => {
+  const { selectedIds, adminFees } = useNotExportedStore();
+
+  const selectedCount = selectedIds.length;
+
+  const selectedItems = dataList.filter((item) =>
+    selectedIds.includes(item.id)
+  );
+
+  const selectedNominal = selectedItems.reduce(
+    (acc, item) =>
+      acc +
+      Number(
+        // Clean currency string to number
+        item.nominal.replace(/[^0-9,-]+/g, "").replace(",", ".")
+      ),
+    0
+  );
+
+  // Get unique banks from selected items
+  const selectedBanks = Array.from(
+    new Set(selectedItems.map((item) => item.rekening_tujuan))
+  );
+
+  // Calculate total admin fee based on selected banks and their input fees
+  const totalAdminFee = selectedBanks.reduce((acc, bank) => {
+    return acc + (adminFees[bank] || 0);
+  }, 0);
+
   return (
-    <div className="flex w-[962px] flex-col ">
+    <div className="flex w-[962px] flex-col">
       {/* Top Row: Total & Biaya Admin */}
       <div className="flex flex-row items-center">
         {/* Total */}
         <div
           className={cn(
-            "grid w-fit grid-flow-col leading-[29px] text-black font-semibold",
-            showExport ? "text-[16px] " : "text-[24px] "
+            "grid w-fit grid-flow-col font-semibold leading-[29px] text-black",
+            showExport ? "text-[16px]" : "text-[24px]"
           )}
         >
           <span className={cn(showExport ? "w-[100px]" : "w-fit")}>Total</span>
-          <span>: Rp16.600.000/Rp30.000.000</span>
+          <span>
+            : {idrFormat(selectedNominal)}/{idrFormat(totalNominal)}
+          </span>
         </div>
 
         {/* Biaya Admin - Animated */}
@@ -30,9 +77,8 @@ const NotExportedSummary = ({ showExport }: NotExportedSummaryProps) => {
               : "max-w-0 opacity-0"
           )}
         >
-          {/* Removed ms-5 since we use ml-[15px] on the parent for separation */}
           <span className="w-[100px]">Biaya Admin</span>
-          <span>: Rp0</span>
+          <span>: {idrFormat(totalAdminFee)}</span>
         </div>
       </div>
 
@@ -49,7 +95,9 @@ const NotExportedSummary = ({ showExport }: NotExportedSummaryProps) => {
           {/* Terpilih */}
           <div className="grid w-fit grid-flow-col text-[16px] font-semibold leading-[19px] text-[#000000]">
             <span className="w-[100px]">Terpilih</span>
-            <span>: 3/10</span>
+            <span>
+              : {selectedCount}/{totalCount}
+            </span>
             <Checkbox
               label="Tampilkan Terpilih Saja"
               className="ms-2 h-[16px] w-[16px] rounded-[4px] border border-[#868686] bg-white"
@@ -63,13 +111,21 @@ const NotExportedSummary = ({ showExport }: NotExportedSummaryProps) => {
           {/* Bank Info */}
           <div className="grid w-full grid-flow-col justify-start text-[16px] font-semibold leading-[19px] text-[#000000]">
             <span className="w-[100px]">Bank</span>
-            <span>: BCA 1/3, BNI 1/3, BRI 1/4</span>
+            <span>
+              :{" "}
+              {summaryData?.banks
+                ?.map((b) => `${b.label} ${b.count}`)
+                .join(", ") || "-"}
+            </span>
           </div>
 
           {/* Status Info */}
           <div className="grid w-full grid-flow-col justify-start text-[16px] font-semibold leading-[19px] text-[#000000]">
             <span className="w-[100px]">Status</span>
-            <span>: Baru 1/4, Retransfer 2/6</span>
+            <span>
+              : Baru {summaryData?.new || 0}, Retransfer{" "}
+              {summaryData?.retransfer || 0}
+            </span>
           </div>
         </div>
       </div>
