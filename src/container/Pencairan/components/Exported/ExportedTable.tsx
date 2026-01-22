@@ -98,7 +98,7 @@ const ExportedTable = ({
                 <ActionDropdown.Item
                   onClick={() =>
                     router.push(
-                      `/pencairan/detail/${encodeURIComponent(row.original.id_export)}?type=batch`
+                      `/pencairan/${encodeURIComponent(row.original.id_export)}?type=invoice`
                     )
                   }
                 >
