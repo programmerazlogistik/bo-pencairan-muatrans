@@ -1,4 +1,4 @@
-import FinishedDetailContainer from "@/container/DetailPencairan/DetailContainer";
+import InvoiceDetailContainer from "@/container/DetailPencairan/InvoiceDetailContainer";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -6,7 +6,7 @@ interface PageProps {
 
 async function Page({ params }: PageProps) {
   const { id } = await params;
-  return <FinishedDetailContainer id={id} />;
+  return <InvoiceDetailContainer id={id} />;
 }
 
 export default Page;

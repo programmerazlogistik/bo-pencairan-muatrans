@@ -96,7 +96,7 @@ const NotExportedTable = ({
               className="h-[28px] bg-[#3ECD00] px-3 text-xs font-semibold text-white hover:bg-[#36b300]"
               onClick={() => {
                 const encodedId = encodeURIComponent(row.original.no_invoice);
-                router.push(`/pencairan/${encodedId}?type=invoice`);
+                router.push(`/pencairan/invoice/${encodedId}`);
               }}
             >
               Detail

@@ -159,7 +159,7 @@ const FinishedTable = ({
         cell: ({ row }: any) => {
           const handleDetailClick = () => {
             const encodedId = encodeURIComponent(row.original.trx_id);
-            router.push(`/pencairan/${encodedId}?type=trx`);
+            router.push(`/pencairan/trx/${encodedId}`);
           };
           return (
             <Button
@@ -222,7 +222,7 @@ const FinishedTable = ({
         cell: ({ row }: any) => {
           const handleDetailClick = () => {
             const encodedId = encodeURIComponent(row.original.id_export);
-            router.push(`/pencairan/${encodedId}?type=batch`);
+            router.push(`/pencairan/batch/${encodedId}`);
           };
           return (
             <ActionDropdown.Root>
